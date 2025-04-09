@@ -166,11 +166,15 @@ const EmergencyButton = ({ onEmergencyCreated }) => {
           `Emergency request from mobile app${nearestHospital ? `. Nearest hospital: ${nearestHospital.name}` : ''}`
       };
       
+      console.log('Sending emergency request with data:', emergencyData);
+      
       // Create emergency
       const response = await createEmergency(emergencyData);
+      console.log('Emergency created:', response.data);
       const emergencyId = response.data.id;
       
       // Assign nearest ambulance and hospital
+      console.log('Assigning services to emergency ID:', emergencyId);
       await assignNearestServices(emergencyId);
       
       // Notify parent component
@@ -178,7 +182,24 @@ const EmergencyButton = ({ onEmergencyCreated }) => {
       setShowSuccessSnackbar(true);
     } catch (err) {
       console.error('Error creating emergency:', err);
-      setError('Failed to create emergency. Please try again.');
+      let errorMsg = 'Failed to create emergency. Please try again.';
+      
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Error response data:', err.response.data);
+        console.error('Error response status:', err.response.status);
+        errorMsg += ` Server responded with status: ${err.response.status}`;
+        if (err.response.data && err.response.data.detail) {
+          errorMsg += ` - ${err.response.data.detail}`;
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        console.error('Error request:', err.request);
+        errorMsg = 'No response from server. Please check your internet connection.';
+      }
+      
+      setError(errorMsg);
     } finally {
       setLoading(false);
       setLocationStatus(null);

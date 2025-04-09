@@ -148,4 +148,5 @@ USE_DUMMY_DATA = True
 # Bhuvan API Token
 BHUVAN_API_TOKEN = "your-bhuvan-api-token-here"  # Replace with actual API token
 
+# Google Places API Key
 GOOGLE_PLACES_API_KEY = 'AIzaSyDsp62a7XqtLn1cCr3EfbD5tj_aX9mvk_E'

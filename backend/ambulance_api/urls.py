@@ -16,6 +16,5 @@ urlpatterns = [
     path('states/', views.get_states, name='states'),
     path('districts/', views.get_districts, name='districts'),
     path('places/', views.maharashtra_places, name='places'),
-    # New endpoint for Google Places API
     path('google-places/', views.proxy_google_places, name='google_places'),
 ]

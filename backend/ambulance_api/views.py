@@ -508,36 +508,41 @@ def maharashtra_places(request):
 
 @api_view(['GET'])
 def proxy_google_places(request):
-    """Proxy requests to Google Places API to avoid CORS and hide API key"""
-    
-    # Get parameters from request
-    query = request.GET.get('query', '')
-    lat = request.GET.get('lat')
-    lng = request.GET.get('lng')
-    radius = request.GET.get('radius', '5000')  # Default 5km radius
-    
-    # Google API key - from settings or fallback to provided key
-    api_key = GOOGLE_PLACES_API_KEY
-    
-    if request.GET.get('place_search') == 'text':
-        # Text search for districts
-        url = f"https://maps.googleapis.com/maps/api/place/textsearch/json"
-        params = {
-            'query': query,
-            'key': api_key
-        }
-    else:
-        # Nearby search for hospitals
-        url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        params = {
-            'location': f"{lat},{lng}",
-            'radius': radius,
-            'type': 'hospital',
-            'key': api_key
-        }
-    
+    """
+    Proxy view for Google Places API requests to avoid CORS issues
+    """
     try:
-        response = requests.get(url, params=params)
-        return JsonResponse(response.json())
+        api_key = getattr(settings, 'GOOGLE_PLACES_API_KEY', None)
+        if not api_key:
+            return Response({'error': 'Google Places API key not configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        # Get request parameters
+        search_type = request.GET.get('type', 'nearbysearch')
+        
+        # Build the appropriate URL based on search type
+        if search_type == 'textsearch':
+            query = request.GET.get('query', '')
+            url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&key={api_key}'
+        
+        elif search_type == 'nearbysearch':
+            lat = request.GET.get('lat')
+            lng = request.GET.get('lng')
+            radius = request.GET.get('radius', 5000)
+            keyword = request.GET.get('keyword', 'hospital')
+            
+            if not lat or not lng:
+                return Response({'error': 'lat and lng parameters are required'}, status=status.HTTP_400_BAD_REQUEST)
+                
+            url = f'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius={radius}&type=hospital&keyword={keyword}&key={api_key}'
+        
+        else:
+            return Response({'error': 'Invalid search type'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Make the request to Google Places API
+        response = requests.get(url)
+        
+        # Just pass through the response
+        return Response(response.json())
+            
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
