@@ -7,10 +7,24 @@ const CORS_PROXY = 'https://corsproxy.io/?';
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
+
+// Add response interceptor to handle network errors
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error);
+    if (error.message === 'Network Error') {
+      console.log('Network error detected. Check if backend server is running and CORS is configured properly.');
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Google Places API
 export const searchMaharashtraDistricts = async (searchQuery) => {
